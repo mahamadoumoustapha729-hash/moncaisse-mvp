@@ -14,8 +14,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Download repository
         uses: actions/checkout@v4
+
+      - name: Extract MonCaisse ZIP
+        run: |
+          unzip -o moncaisse_mvp_flutter_source.zip -d extracted
+          echo "Contenu extrait :"
+          find extracted -name pubspec.yaml
+
+      - name: Locate Flutter project
+        run: |
+          PROJECT_DIR=$(dirname "$(find extracted -name pubspec.yaml -print -quit)")
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERREUR : pubspec.yaml introuvable dans le ZIP."
+            exit 1
+          fi
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Projet trouvé dans : $PROJECT_DIR"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -24,22 +40,28 @@ jobs:
           cache: true
 
       - name: Generate Android project files
+        working-directory: ${{ env.PROJECT_DIR }}
         run: flutter create --platforms=android --org com.moncaisse .
 
       - name: Get dependencies
+        working-directory: ${{ env.PROJECT_DIR }}
         run: flutter pub get
 
-      - name: Analyze Dart code
+      - name: Analyze code
+        working-directory: ${{ env.PROJECT_DIR }}
         run: flutter analyze
 
       - name: Run tests
+        working-directory: ${{ env.PROJECT_DIR }}
         run: flutter test
 
-      - name: Build debug APK
+      - name: Build APK
+        working-directory: ${{ env.PROJECT_DIR }}
         run: flutter build apk --debug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: moncaisse-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
