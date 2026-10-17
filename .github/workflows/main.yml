@@ -1,0 +1,44 @@
+name: Création de l'APK MonCaisse
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Extraire le projet ZIP
+        run: |
+          unzip -o "Mon Caisse.Zip.zip" -d projet
+          find projet -name pubspec.yaml
+
+      - name: Installer les dependances
+        run: |
+          cd projet
+          flutter pub get
+
+      - name: Generer APK
+        run: |
+          cd projet
+          flutter build apk --release
+
+      - name: Recuperer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mon-Caisse-APK
+          path: projet/build/app/outputs/flutter-apk/app-release.apk
