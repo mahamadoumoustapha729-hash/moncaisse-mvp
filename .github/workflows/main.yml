@@ -22,9 +22,12 @@ jobs:
         with:
           channel: stable
 
-      - name: Extraire le projet ZIP
+      - name: Extraire et localiser le projet
         run: |
           unzip -o "Mon Caisse.Zip.zip" -d projet
+          echo "=== Fichiers du projet ==="
+          find projet -maxdepth 5 -type f | head -100
+          echo "=== Recherche pubspec.yaml ==="
           find projet -name pubspec.yaml
 
       - name: Installer les dependances
